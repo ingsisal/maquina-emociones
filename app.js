@@ -1,89 +1,58 @@
-$(document).ready(function () {
-  const video = document.getElementById("video");
-  const canvas = document.getElementById("overlay");
-  const $emocionTexto = $("#emocionDetectada");
 
-  async function cargarModelos() {
-    const MODEL_URL = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js-models@master/models";
+const video = document.getElementById("video");
+const canvas = document.getElementById("overlay");
+const emotionDiv = document.getElementById("emotion");
+
+async function iniciarCamara() {
     try {
-      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-      await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
-      iniciarCamara();
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user" },
+            audio: false,
+        });
+        video.srcObject = stream;
     } catch (err) {
-      console.error("❌ Error cargando modelos:", err);
-      $emocionTexto.text("❌ No se pudieron cargar los modelos.");
+        alert("Error accediendo a la cámara: " + err.message);
     }
-  }
+}
 
-  async function iniciarCamara() {
+async function cargarModelos() {
+    const MODEL_URL = "./models";
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
-        audio: false
-      });
-      video.srcObject = stream;
-
-      video.onloadedmetadata = async () => {
-        await video.play();
-        esperarVideoYDetectar();
-      };
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+        console.log("Modelos cargados correctamente");
     } catch (err) {
-      console.error("❌ Error accediendo a la cámara:", err);
-      $emocionTexto.text("❌ No se pudo acceder a la cámara.");
+        console.error("Error cargando modelos:", err);
+        emotionDiv.textContent = "❌ No se pudieron cargar los modelos.";
     }
-  }
+}
 
-  function esperarVideoYDetectar() {
-    const esperar = setInterval(() => {
-      if (video.videoWidth > 0 && video.videoHeight > 0) {
-        clearInterval(esperar);
-        detectarEmociones();
-      }
-    }, 500);
-  }
-
-  function detectarEmociones() {
-    const displaySize = {
-      width: video.videoWidth,
-      height: video.videoHeight
-    };
-
-    canvas.width = displaySize.width;
-    canvas.height = displaySize.height;
-
-    const ctx = canvas.getContext("2d");
-
-    setInterval(async () => {
-      const detections = await faceapi
+async function detectar() {
+    const detections = await faceapi
         .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
         .withFaceExpressions();
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const dims = faceapi.matchDimensions(canvas, video, true);
+    const resized = faceapi.resizeResults(detections, dims);
 
-      if (detections.length > 0) {
-        const resized = faceapi.resizeResults(detections, displaySize);
-        faceapi.draw.drawDetections(canvas, resized);
-        faceapi.draw.drawFaceExpressions(canvas, resized);
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    faceapi.draw.drawDetections(canvas, resized);
+    faceapi.draw.drawFaceExpressions(canvas, resized);
 
-        const emociones = detections[0].expressions;
-        const emocionPrincipal = Object.entries(emociones).sort((a, b) => b[1] - a[1])[0][0];
+    if (resized.length > 0) {
+        const exp = resized[0].expressions;
+        const emotion = Object.entries(exp).sort((a, b) => b[1] - a[1])[0][0];
+        emotionDiv.textContent = "🙂 Emoción: " + emotion;
+    } else {
+        emotionDiv.textContent = "Detectando...";
+    }
+}
 
-        const emojiMap = {
-          happy: "😄 Feliz",
-          sad: "😢 Triste",
-          angry: "😠 Enojado",
-          surprised: "😲 Sorprendido",
-          disgusted: "🤢 Disgustado",
-          fearful: "😨 Asustado",
-          neutral: "😐 Neutral"
-        };
-
-        $emocionTexto.text(`Emoción detectada: ${emojiMap[emocionPrincipal] || "😐 Desconocida"}`);
-      } else {
-        $emocionTexto.text("🔍 Buscando rostro...");
-      }
-    }, 1000);
-  }
-
-  cargarModelos();
+video.addEventListener("playing", () => {
+    setInterval(detectar, 1000);
 });
+
+(async () => {
+    await cargarModelos();
+    await iniciarCamara();
+})();
