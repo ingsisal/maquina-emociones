@@ -1,0 +1,32 @@
+body {
+  margin: 0;
+  background: #eef1f5;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: 700px;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+}
+
+video, canvas {
+  width: 100%;
+  border-radius: 12px;
+  max-height: 80vh;
+  object-fit: cover;
+}
+
+#emocionDetectada {
+  margin-top: 15px;
+  font-size: 22px;
+  font-weight: bold;
+  color: #333;
+}
