@@ -16,7 +16,7 @@ async function iniciarCamara() {
 }
 
 async function cargarModelos() {
-    const MODEL_URL = "./models/";
+    const MODEL_URL = "./models";
     try {
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
         await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
