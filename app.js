@@ -3,6 +3,16 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("overlay");
 const emotionDiv = document.getElementById("emotion");
 
+const EMOCIONES_ES = {
+    "angry": "Estas Enojado",
+    "disgusted": "Estas Disgustado",
+    "fearful": "Estas de Miedo",
+    "happy": "Estas de Felicidad",
+    "neutral": "Estas Neutral",
+    "sad": "Estas Triste",
+    "surprised": "Estas Sorprendido"
+};
+
 async function iniciarCamara() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -11,7 +21,7 @@ async function iniciarCamara() {
         });
         video.srcObject = stream;
     } catch (err) {
-        alert("Error accediendo a la cámara: " + err.message);
+        alert("Error accediendo a la camara: " + err.message);
     }
 }
 
@@ -23,7 +33,7 @@ async function cargarModelos() {
         console.log("Modelos cargados correctamente");
     } catch (err) {
         console.error("Error cargando modelos:", err);
-        emotionDiv.textContent = "❌ No se pudieron cargar los modelos.";
+        emotionDiv.textContent = "No se pudieron cargar los modelos.";
     }
 }
 
@@ -42,7 +52,8 @@ async function detectar() {
     if (resized.length > 0) {
         const exp = resized[0].expressions;
         const emotion = Object.entries(exp).sort((a, b) => b[1] - a[1])[0][0];
-        emotionDiv.textContent = "🙂 Emoción: " + emotion;
+        const traduccion = EMOCIONES_ES[emotion] || emotion;
+        emotionDiv.textContent = "Tu Emocion es : " + traduccion;
     } else {
         emotionDiv.textContent = "Detectando...";
     }
